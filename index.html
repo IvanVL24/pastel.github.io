@@ -1,0 +1,663 @@
+<?php
+require_once "config/conexion.php";
+require_once "config/config.php";
+
+$db = new Database();
+$conn = $db->conectar();
+
+$idCategoria = $_GET['cat'] ?? '';
+$orden = $_GET['orden'] ?? '';
+$buscar = $_GET['q'] ?? '';
+
+$filtro = '';
+
+$orders = [
+    'asc' => 'nombre ASC',
+    'desc' => 'nombre DESC',
+    'precio_alto' => 'precio_con_descuento DESC',
+    'precio_bajo' => 'precio_con_descuento ASC',
+    'descuento' => 'descuento DESC',
+];
+
+$order = $orders[$orden] ?? '';
+
+$params = [];
+
+$query = "SELECT id, nombre, precio, descuento, descripcion, stock, id_categoria, precio - ((precio * descuento) / 100) AS precio_con_descuento FROM productos WHERE activo=1";
+
+if ($buscar != '') {
+    $query .= " AND nombre LIKE ?";
+    $params[] = "%$buscar%";
+    //$filtro = "AND nombre LIKE '%$buscar%'";
+}
+
+if ($idCategoria != '') {
+    $query .= " AND id_categoria = ?";
+    $params[] = $idCategoria;
+}
+
+if (!empty($order)) {
+    $order = " ORDER BY $order";
+    $query .= $order;
+}
+
+$query = $conn->prepare($query);
+$query->execute($params);
+
+/*if(!empty($idCategoria)){
+ $sql = $conn->prepare("SELECT id, nombre, precio, descuento, Edicion, stock FROM videojuegos WHERE activo=1 $filtro AND id_categoria = ? $order");
+ $sql->execute([$idCategoria]);
+}else {
+$sql = $conn->prepare("SELECT id, nombre, precio, descuento, Edicion, stock FROM videojuegos WHERE activo=1 $filtro $order");
+$sql->execute();   
+}*/
+$resultado = $query->fetchAll(PDO::FETCH_ASSOC);
+
+$sqlCategorias = $conn->prepare("SELECT id, nombre FROM categorias WHERE activo=1");
+$sqlCategorias->execute();
+$categorias = $sqlCategorias->fetchAll(PDO::FETCH_ASSOC);
+
+?>
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7ZGXSGXSVW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-7ZGXSGXSVW');
+</script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pasteleria Esperanza</title>
+    <meta name="description" content="Resto">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/select2/select2.min.css">
+    <link rel="stylesheet" href="vendor/owlcarousel/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/css/tempusdominus-bootstrap-4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.1/css/brands.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700|Josefin+Sans:300,400,700">
+    <link rel="stylesheet" href="https://cdn.linearicons.com/free/1.0.0/icon-font.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+        integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+
+
+    <link rel="stylesheet" href="css/style.min.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://kit.fontawesome.com/ca4f209874.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.js"></script>
+
+</head>
+
+<body data-spy="scroll" data-target="#navbar" class="static-layout">
+    <div class="boxed-page">
+        <?php
+        include "header.php";
+        ?>
+        <div class="hero">
+            <div class="container">
+                <div class="row d-flex align-items-center">
+                    <div class="col-lg-6 hero-left">
+                        <h1 class="display-4 mb-5">Pasteleria Esperanza <br>Sabor a Mexico </h1>
+                        <div class="mb-2">
+                            <a class="btn btn-primary btn-shadow btn-lg" href="buscador.php" role="button">Explora nuestras
+                                opciones </a>
+                            <a class="btn btn-icon btn-lg" href="https://player.vimeo.com/video/33110953"
+                                data-featherlight="iframe" data-featherlight-iframe-allowfullscreen="true">
+                                <span class="lnr lnr-film-play"></span>
+                                Play Video
+                            </a>
+                        </div>
+
+                        <ul class="hero-info list-unstyled d-flex text-center mb-0">
+                            <li class="border-right">
+                                <span class="lnr lnr-rocket"></span>
+                                <h5>
+                                    Entrega rapida
+                                </h5>
+                            </li>
+                            <li class="border-right">
+                                <span class="lnr lnr-leaf"></span>
+                                <h5>
+                                    Recien Hechos
+                                </h5>
+                            </li>
+                            <li class="">
+                                <span class="lnr lnr-bubble"></span>
+                                <h5>
+                                    Soporte 24/7
+                                </h5>
+                            </li>
+                        </ul>
+
+                    </div>
+                    <div class="col-lg-6 hero-right">
+                        <div class="owl-carousel owl-theme hero-carousel">
+                            <div class="item">
+                                <img class="img-fluid" src="img/Pastel1.jpg" alt="">
+                            </div>
+                            <div class="item">
+                                <img class="img-fluid" src="img/p2.jpg" alt="">
+                            </div>
+                            <div class="item">
+                                <img class="img-fluid" src="img/p3.jpg" alt="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <section id="gtco-welcome" class="bg-white section-padding">
+            <div class="container">
+                <div class="section-content">
+                    <div class="row">
+                        <div class="col-sm-5 img-bg d-flex shadow align-items-center justify-content-center justify-content-md-end img-2"
+                            style="background-image: url(img/rollo.jpg);">
+
+                        </div>
+                        <div class="col-sm-7 py-5 pl-md-0 pl-4">
+                            <div class="heading-section pl-lg-5 ml-md-5">
+                                <span class="subheading">
+                                    About
+                                </span>
+                                <h2>
+                                    Bienvenido a Pasteleria Esperanza
+                                </h2>
+                            </div>
+                            <div class="pl-lg-5 ml-md-5">
+                                <p>Nuestra Historia
+
+                                    ​​​​​​​ Desde 1975, endulzando la vida de México
+
+                                    En el corazón de la Ciudad de México, nació un sueño: Pastelerías Esperanza. Fundada
+                                    en 1975 por los hermanos Francisco Juamperez Barberena y Pedro J. B., esta panadería
+                                    artesanal se convirtió rápidamente en un referente de sabor y tradición en la
+                                    colonia Escuadrón 201, Iztapalapa.
+
+                                    Un sabor que conquista paladares
+
+                                    Su compromiso con la frescura, la calidad y el sabor excepcional los llevó al éxito.
+                                    Sus productos se convirtieron en los favoritos de la zona, impulsando la expansión
+                                    del negocio. Poco a poco, abrieron 13 sucursales más en Iztapalapa, consolidando su
+                                    presencia en la zona.
+
+                                    Un crecimiento imparable
+
+                                    A principios del año 2000, la empresa experimentó un crecimiento exponencial. Para
+                                    el 2005, ya contaban con 35 sucursales en la zona oriente de la Ciudad de México.
+                                    Para optimizar la gestión y rentabilidad del negocio, implementaron un sistema de
+                                    registro de ingresos y software, una innovación necesaria para su adaptación al
+                                    mercado.</p>
+                                <h3 class="mt-5">Especialidades</h3>
+                                <div class="row">
+                                    <?php
+                                    $count = 0; // Inicializamos el contador
+                                    foreach ($resultado as $row) {
+                                        if ($row['id_categoria'] == 3) {
+                                            if ($count >= 3) {
+                                                break; // Rompemos el ciclo cuando hemos impreso 6 elementos
+                                            }
+                                    ?>
+                                            <div class="col-4">
+                                                <?php
+                                                $id = $row['id'];
+                                                $nombre = $row['nombre'];
+                                                $formats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
+                                                $imgformat = '';
+                                                foreach ($formats as $format) {
+                                                    $filePath = "ima/$id/principal.$format";
+                                                    if (file_exists($filePath)) {
+                                                        $imgformat = $format;
+                                                        break;
+                                                    }
+                                                }
+                                                ?>
+                                                <a class="thumb-menu" href="details.php"
+                                                </a>
+                                            </div>
+                                    <?php
+                                            $count++; // Incrementamos el contador después de imprimir un elemento
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="gtco-special-dishes" class="bg-grey section-padding">
+            <div class="container">
+                <div class="section-content">
+                    <div class="heading-section text-center">
+                        <span class="subheading">
+                            Especialidad
+                        </span>
+                        <h2>
+                            Reposteria
+                        </h2>
+                    </div>
+                    <?php
+                    $count = 0; // Inicializamos el contador
+                    foreach ($resultado as $row) {
+                        if ($row['id'] == 8) {
+                            $id = $row['id'];
+                            $nombre = $row['nombre'];
+                            $descripcion = $row['descripcion'];
+                            $precio = $row['precio_con_descuento'];
+                            $formats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
+                            $imgformat = '';
+                            foreach ($formats as $format) {
+                                $filePath = "ima/$id/principal.$format";
+                                if (file_exists($filePath)) {
+                                    $imgformat = $format;
+                                    break;
+                                }
+                            }
+                            if ($count >= 1) {
+                                break; // Rompemos el ciclo cuando hemos impreso 6 elementos
+                            }
+                    ?>
+                            <div class="row">
+                                <div class="col-lg-5 col-md-6 align-self-center">
+                                    <h2 class="special-number">01.</h2>
+                                    <div class="dishes-text">
+                                        <h3><span> <?php echo $nombre; ?></span></h3>
+                                        <p class="pt-3">Encuentra este pastel en todas nuestras sucursales , <?php echo $descripcion; ?> como Sabor principal de este pastel
+                                        </p>
+                                        <h3 class="special-dishes-price"><?php echo MONEDA . number_format($precio, 2, '.', ',') . "MXN<br>"; ?></h3>
+                                        <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>" class="btn-primary mt-3">Encuentralo Aqui
+                                            <i
+                                                class="fa fa-long-arrow-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 offset-lg-2 col-md-6 align-self-center mt-4 mt-md-0">
+                                    <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>">
+                                        <img class="img-fluid shadow w-100" src="ima/<?php echo $id; ?>/principal.<?php echo $imgformat; ?>">
+                                    </a>
+                                </div>
+                            </div>
+                    <?php
+                            $count++; // Incrementamos el contador después de imprimir un elemento
+                        }
+                    }
+                    ?>
+                    <?php
+                    $count = 0; // Inicializamos el contador
+                    foreach ($resultado as $row) {
+                        if ($row['id'] == 9) {
+                            $id = $row['id'];
+                            $nombre = $row['nombre'];
+                            $descripcion = $row['descripcion'];
+                            $precio = $row['precio_con_descuento'];
+                            $formats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
+                            $imgformat = '';
+                            foreach ($formats as $format) {
+                                $filePath = "ima/$id/principal.$format";
+                                if (file_exists($filePath)) {
+                                    $imgformat = $format;
+                                    break;
+                                }
+                            }
+                            if ($count >= 1) {
+                                break; // Rompemos el ciclo cuando hemos impreso 6 elementos
+                            }
+                    ?>
+                            <div class="row mt-5">
+                                <div class="col-lg-5 col-md-6 align-self-center order-2 order-md-1 mt-4 mt-md-0">
+                                    <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>">
+                                        <img class="img-fluid shadow w-100" src="ima/<?php echo $id; ?>/principal.<?php echo $imgformat; ?>">
+                                    </a>
+                                </div>
+                                <div class="col-lg-5 offset-lg-2 col-md-6 align-self-center order-1 order-md-2 py-5">
+                                    <h2 class="special-number">02.</h2>
+                                    <div class="dishes-text">
+                                        <h3><span><?php echo $nombre; ?></span></h3>
+                                        <p class="pt-3">Prueba nuestro delicioso <?php echo $descripcion; ?>, Pastel de
+                                            temporada solo disponible en nuestras sucursales de Nezahualcoyotl</p>
+                                        <h3 class="special-dishes-price"><?php echo MONEDA . number_format($precio, 2, '.', ',') . "MXN<br>"; ?></h3>
+                                        <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>" class="btn-primary mt-3">
+                                            <i
+                                                class="fa fa-long-arrow-right"></i>Encuentralo Aqui</a>
+                                    </div>
+                                </div>
+                            </div>
+                    <?php
+                            $count++; // Incrementamos el contador después de imprimir un elemento
+                        }
+                    }
+                    ?>
+                    <?php
+                    $count = 0; // Inicializamos el contador
+                    foreach ($resultado as $row) {
+                        if ($row['id'] == 10) {
+                            $id = $row['id'];
+                            $nombre = $row['nombre'];
+                            $descripcion = $row['descripcion'];
+                            $precio = $row['precio_con_descuento'];
+                            $formats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
+                            $imgformat = '';
+                            foreach ($formats as $format) {
+                                $filePath = "ima/$id/principal.$format";
+                                if (file_exists($filePath)) {
+                                    $imgformat = $format;
+                                    break;
+                                }
+                            }
+                            if ($count >= 1) {
+                                break; // Rompemos el ciclo cuando hemos impreso 6 elementos
+                            }
+                    ?>
+                            <div class="row mt-5">
+                                <div class="col-lg-5 col-md-6 align-self-center py-5">
+                                    <h2 class="special-number">03.</h2>
+                                    <div class="dishes-text">
+                                        <h3><span><?php echo $nombre; ?></span></h3>
+                                        <p class="pt-3">Prueba nuestro delicioso <?php echo $nombre; ?> ,
+                                            disponible en todas nuestras sucursales existentes , No dejes pasar esta increible
+                                            oferta<br>
+                                            Pruebalo ya!!! </p>
+                                        <h3 class="special-dishes-price"><?php echo MONEDA . number_format($precio, 2, '.', ',') . "MXN<br>"; ?></h3>
+                                        <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>" class="btn-primary mt-3">Encuentralo Aqui
+                                            <i
+                                                class="fa fa-long-arrow-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5 offset-lg-2 col-md-6 align-self-center mt-4 mt-md-0">
+                                    <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>">
+                                        <img class="img-fluid shadow w-100" src="ima/<?php echo $id; ?>/principal.<?php echo $imgformat; ?>">
+                                    </a>
+                                </div>
+                            </div>
+                    <?php
+                            $count++; // Incrementamos el contador después de imprimir un elemento
+                        }
+                    }
+                    ?>
+                </div>
+            </div>
+        </section>
+
+        <section id="gtco-menu" class="section-padding">
+            <div class="container">
+                <div class="section-content">
+                    <div class="row row-cols-1 row-cols-sm-4 row-cols-md1 justify-content-end g-1">
+                        <div class="col">
+                            <form action="index.php" id="ordenForm" method="get" onchange="submitForm()">
+                                <input type="hidden" name="cat" id="cat" value="<?php echo $idCategoria; ?>">
+                                <select name="orden" id="orden" class="form-select form-select-sm">
+                                    <option value="">Ordenar por...</option>
+                                    <option value="descuento" <?php echo ($orden === 'descuento') ? 'selected' : ''; ?>>Descuentos</option>
+                                    <option value="precio_alto" <?php echo ($orden === 'precio_alto') ? 'selected' : ''; ?>>Precios más altos</option>
+                                    <option value="precio_bajo" <?php echo ($orden === 'precio_bajo') ? 'selected' : ''; ?>>Precios más bajos</option>
+                                    <option value="asc" <?php echo ($orden === 'asc') ? 'selected' : ''; ?>>Nombre A-Z</option>
+                                    <option value="desc" <?php echo ($orden === 'desc') ? 'selected' : ''; ?>>Nombre Z-A</option>
+                                </select>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="row mb-5">
+                        <div class="col-md-12">
+                            <div class="heading-section text-center">
+                                <span class="subheading">
+                                    Reposteria
+                                </span>
+                                <h2>
+                                    Ordenar
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="container">
+                        <div class="row">
+                            <?php foreach ($categorias as $categoria) { ?>
+                                <div class="col-md-12">
+                                    <div class="heading-menu">
+                                        <h3 class="text-center mb-5"><?php echo $categoria['nombre']; ?></h3>
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 mx-auto">
+                                    <div class="row">
+                                        <?php
+                                        $count = 0; // Inicializamos el contador
+                                        foreach ($resultado as $row) {
+                                            if ($row['id_categoria'] == $categoria['id']) {
+                                                if ($count >= 6) {
+                                                    break; // Rompemos el ciclo cuando hemos impreso 6 elementos
+                                                }
+                                        ?>
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="menus d-flex align-items-start">
+                                                        <?php
+                                                        $id = $row['id'];
+                                                        $nombre = $row['nombre'];
+                                                        $edicion = $row['descripcion'];
+                                                        $precio = $row['precio'];
+                                                        $stock = $row['stock'];
+                                                        $descuento = $row['descuento'];
+                                                        $precio_desc = $row['precio_con_descuento'];
+                                                        $formats = ['jpeg', 'jpg', 'png', 'jfif', 'webp'];
+                                                        $imgformat = '';
+                                                        foreach ($formats as $format) {
+                                                            $filePath = "ima/$id/principal.$format";
+                                                            if (file_exists($filePath)) {
+                                                                $imgformat = $format;
+                                                                break;
+                                                            }
+                                                        }
+                                                        ?>
+                                                        <div class="menu-img rounded-circle me-3">
+                                                            <a href="details.php?id=<?php echo $id; ?>&token=<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>">
+                                                                <img class="imagen" src="ima/<?php echo $id; ?>/principal.<?php echo $imgformat; ?>">
+                                                            </a>
+                                                        </div>
+                                                        <div class="container">
+                                                            <div class="text-wrap">
+                                                                <div class="row mb-2">
+                                                                    <div class="col-8">
+                                                                        <h4><?php echo $nombre; ?></h4>
+                                                                        <p><?php echo $edicion; ?></p>
+                                                                    </div>
+                                                                    <?php if ($descuento > 0) { ?>
+                                                                        <div class="col-4 text-end">
+                                                                            <h4 class="text-muted menu-price">
+                                                                                <del><?php echo MONEDA . number_format($precio, 2, '.', ',') . "MXN<br>"; ?></del>
+                                                                                <?php echo MONEDA . number_format($precio_desc, 2, '.', ',') . "MXN<br>"; ?>
+                                                                            </h4>
+                                                                            <small class="text-dark"><?php echo $descuento; ?>% descuento</small>
+                                                                        </div>
+                                                                    <?php } else { ?>
+                                                                        <div class="col-4 text-end">
+                                                                            <h4 class="text-muted menu-price">
+                                                                                <?php echo MONEDA . number_format($precio, 2, '.', ',') . "MXN<br>"; ?>
+                                                                            </h4>
+                                                                        </div>
+                                                                    <?php } ?>
+                                                                    <?php if ($stock == 0) { ?>
+                                                                        <div class="col-12 text-center">
+                                                                            <button class="btn btn-small btn-dark" disabled type="button">
+                                                                                Agotado
+                                                                            </button>
+                                                                        </div>
+                                                                    <?php } else { ?>
+                                                                        <div class="col-12 mt-3 text-center">
+                                                                            <button class="btn btn-small btn-dark" type="button" onclick="addProducto(<?php echo $id; ?>, '<?php echo hash_hmac('sha1', $id, KEY_TOKEN); ?>')">
+                                                                                Agregar
+                                                                            </button>
+                                                                        </div>
+                                                                    <?php } ?>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                        <?php
+                                                $count++; // Incrementamos el contador después de imprimir un elemento
+                                            }
+                                        }
+                                        ?>
+                                    </div>
+                                </div>
+                            <?php } ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gtco-testimonial" class="overlay bg-fixed section-padding mb-4"
+            style="background-image: url(img/Back.jpg);">
+            <div class="container">
+                <div class="section-content">
+                    <div class="heading-section text-center">
+                        <span class="subheading">
+                            Testimonios
+                        </span>
+                        <h2>
+                            Pasteleria La Esperanza
+                        </h2>
+                    </div>
+                    <div class="row">
+                        <div class="testi-content testi-carousel owl-carousel">
+                            <div class="testi-item">
+                                <i class="testi-icon fa fa-3x fa-quote-left"></i>
+                                <p class="testi-text">La calidad de este pan es increible , tienen una variedad
+                                    impresionante depan y la especilidad que es la reposteria es impresionante</p>
+                                <p class="testi-author">Nicolas Valderrama</p><br>
+                                <p class="testi-desc">Comprador <span>Sucursal Nezahualcoyotl</span></p>
+                            </div>
+                            <div class="testi-item">
+                                <i class="testi-icon fa fa-3x fa-quote-left"></i>
+                                <p class="testi-text">Mi experiencia con esta empresa de "Pasteleria Esperanza" es muy
+                                    buena , llevo años comprando con ellos y acada vez la experiencia es mucho mejor en
+                                    cuanto a servicio y calidad</p>
+                                <p class="testi-author">Leticia Ledesma</p>
+                                <p class="testi-desc">Compradora <span>Sucursal Nezahualcoyotl</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="gtco-team" class="bg-white section-padding">
+            <div class="container">
+                <div class="section-content">
+                    <div class="heading-section text-center">
+                        <span class="subheading">
+                            Diseño web
+                        </span>
+                        <h2>
+                            Equipo
+                        </h2>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="team-card mb-5">
+                                <img class="img-fluid" src="img/ivan.jpg" alt="">
+                                <div class="team-desc">
+                                    <h4 class="mb-0"> Ivan Ledesma</h4>
+                                    <p class="mb-1">Diseñador Web</p>
+                                    <ul class="list-inline mb-0 team-social-links">
+                                        <li class="list-inline-item">
+                                            <a href="#">
+                                                <i class="fab fa-facebook-f"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a href="#">
+                                                <i class="fab fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a href="#">
+                                                <i class="fab fa-instagram"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a href="#">
+                                                <i class="fab fa-google-plus-g"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <center>
+        
+        <?php
+        
+      
+    
+        include "footer.php";
+        ?>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
+    <script src="vendor/bootstrap/popper.min.js"></script>
+    <script src="vendor/bootstrap/bootstrap.min.js"></script>
+    <script src="vendor/select2/select2.min.js "></script>
+    <script src="vendor/owlcarousel/owl.carousel.min.js"></script>
+    <script src="https://cdn.rawgit.com/noelboss/featherlight/1.7.13/release/featherlight.min.js"></script>
+    <script src="vendor/stellar/jquery.stellar.js" type="text/javascript" charset="utf-8"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.0.1/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <script src="js/app.min.js "></script>
+    <script>
+        function addProducto(id, token) {
+            let url = 'clases/carrito.php'
+            let formData = new FormData()
+            formData.append('id', id)
+            formData.append('token', token)
+
+            fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors'
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        let elemento = document.getElementById("num_cart")
+                        elemento.innerHTML = data.numero
+                    } else {
+                        alert("No se cuenta con la cantidad que usted desea del producto")
+                    }
+
+                })
+        }
+
+        function submitForm() {
+            document.getElementById('ordenForm').submit();
+        }
+    </script>
+    </div>
+</body>
+
+</html>
